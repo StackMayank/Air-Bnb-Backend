@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hotel Management - Admin Panel</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f5f5; color: #333; }
+    .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+    h1 { margin-bottom: 24px; color: #1a1a1a; }
+    h2 { margin-bottom: 16px; color: #333; border-bottom: 2px solid #0066cc; padding-bottom: 8px; }
+    h3 { margin: 16px 0 8px; color: #555; }
+
+    .tabs { display: flex; gap: 4px; margin-bottom: 24px; background: #fff; border-radius: 8px; padding: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    .tab { padding: 10px 20px; border: none; background: transparent; cursor: pointer; border-radius: 6px; font-size: 14px; font-weight: 500; transition: all 0.2s; }
+    .tab.active { background: #0066cc; color: #fff; }
+    .tab:hover:not(.active) { background: #e8e8e8; }
+
+    .panel { display: none; background: #fff; border-radius: 8px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    .panel.active { display: block; }
+
+    .form-group { margin-bottom: 16px; }
+    .form-group label { display: block; margin-bottom: 4px; font-weight: 500; font-size: 14px; }
+    .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 10px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; transition: border-color 0.2s; }
+    .form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline: none; border-color: #0066cc; }
+    .form-group textarea { resize: vertical; min-height: 80px; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+    .btn { padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 500; transition: all 0.2s; }
+    .btn-primary { background: #0066cc; color: #fff; }
+    .btn-primary:hover { background: #0052a3; }
+    .btn-danger { background: #dc3545; color: #fff; }
+    .btn-danger:hover { background: #c82333; }
+    .btn-success { background: #28a745; color: #fff; }
+    .btn-success:hover { background: #218838; }
+    .btn-sm { padding: 6px 12px; font-size: 12px; }
+    .btn-secondary { background: #6c757d; color: #fff; }
+    .btn-secondary:hover { background: #5a6268; }
+    .btn-outline { background: #fff; color: #0066cc; border: 1px solid #0066cc; }
+    .btn-outline:hover { background: #e8f2fc; }
+
+    .card { border: 1px solid #e0e0e0; border-radius: 8px; padding: 16px; margin-bottom: 12px; }
+    .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+    .card-title { font-weight: 600; font-size: 16px; }
+    .card-meta { font-size: 13px; color: #666; }
+
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: 500; }
+    .badge-active { background: #d4edda; color: #155724; }
+    .badge-inactive { background: #f8d7da; color: #721c24; }
+
+    .toast { position: fixed; top: 20px; right: 20px; padding: 12px 20px; border-radius: 6px; color: #fff; font-size: 14px; z-index: 1000; animation: slideIn 0.3s; }
+    .toast-success { background: #28a745; }
+    .toast-error { background: #dc3545; }
+    @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+    .empty-state { text-align: center; padding: 40px; color: #666; }
+    .list-container { max-height: 500px; overflow-y: auto; }
+
+    .login-container { max-width: 400px; margin: 100px auto; background: #fff; padding: 32px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+    .login-container h2 { text-align: center; border: none; }
+
+    #app-content { display: none; }
+    #login-section { display: block; }
+
+    .info-box { background: #e8f4fd; border: 1px solid #b8daff; border-radius: 6px; padding: 12px; margin-bottom: 16px; font-size: 13px; }
+    .data-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 24px; }
+    .summary-card { background: #f8f9fa; border-radius: 6px; padding: 16px; text-align: center; }
+    .summary-card .count { font-size: 28px; font-weight: 700; color: #0066cc; }
+    .summary-card .label { font-size: 12px; color: #666; margin-top: 4px; }
+
+    .card-actions { display: flex; gap: 8px; flex-shrink: 0; }
+    .nested-rooms { margin-top: 16px; padding-top: 16px; border-top: 1px solid #eee; }
+    .nested-rooms h4 { font-size: 14px; color: #444; margin-bottom: 12px; }
+    .nested-room-form { background: #f9fafb; border-radius: 8px; padding: 12px; margin-bottom: 12px; }
+    .nested-room-form .form-row { grid-template-columns: 1fr 1fr; gap: 10px; }
+    .nested-room-form .form-group { margin-bottom: 10px; }
+    .nested-room-form .form-group label { font-size: 12px; }
+    .nested-room-form .form-group input,
+    .nested-room-form .form-group textarea { padding: 8px 10px; font-size: 13px; }
+    .room-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; padding: 10px 0; border-bottom: 1px solid #eee; font-size: 13px; }
+    .room-row:last-child { border-bottom: none; }
+    .hotel-form-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Hotel Management - Admin Panel</h1>
+
+    <div id="login-section">
+      <div class="login-container">
+        <h2>Admin Login</h2>
+        <div class="info-box">
+          Default credentials:<br/>
+          Email: <strong>admin@hotel.com</strong><br/>
+          Password: <strong>admin123</strong>
+        </div>
+        <form id="login-form">
+          <div class="form-group">
+            <label>Email</label>
+            <input type="email" id="login-email" value="admin@hotel.com" required />
+          </div>
+          <div class="form-group">
+            <label>Password</label>
+            <input type="password" id="login-password" value="admin123" required />
+          </div>
+          <button type="submit" class="btn btn-primary" style="width:100%">Login</button>
+        </form>
+      </div>
+    </div>
+
+    <div id="app-content">
+      <div class="data-summary" id="data-summary"></div>
+
+      <div class="tabs">
+        <button class="tab active" data-tab="hotels">Hotels</button>
+        <button class="tab" data-tab="users">Users</button>
+        <button class="tab" data-tab="bookings">Bookings</button>
+        <button class="tab" data-tab="seed">Seed Data</button>
+      </div>
+
+      <!-- Hotels Panel -->
+      <div class="panel active" id="panel-hotels">
+        <h2 id="hotel-form-heading">Add New Hotel</h2>
+        <form id="hotel-form">
+          <input type="hidden" id="hotel-form-id" value="" />
+          <div class="form-row">
+            <div class="form-group">
+              <label>Hotel Name</label>
+              <input type="text" id="hotel-name" required placeholder="e.g. Grand Palace Hotel" />
+            </div>
+            <div class="form-group">
+              <label>City</label>
+              <input type="text" id="hotel-city" required placeholder="e.g. Delhi" />
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Address</label>
+              <input type="text" id="hotel-address" required placeholder="e.g. MG Road, Sector 5" />
+            </div>
+            <div class="form-group">
+              <label>Email</label>
+              <input type="email" id="hotel-email" required placeholder="e.g. info@hotel.com" />
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Phone Number</label>
+              <input type="text" id="hotel-phone" required placeholder="e.g. 9876543210" />
+            </div>
+            <div class="form-group">
+              <label>Location (lat,lng)</label>
+              <input type="text" id="hotel-location" placeholder="e.g. 28.6139,77.2090" />
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Photos (one URL per line)</label>
+            <textarea id="hotel-photos" placeholder="https://example.com/photo1.jpg&#10;https://example.com/photo2.jpg"></textarea>
+          </div>
+          <div class="form-group">
+            <label>Amenities (comma separated)</label>
+            <input type="text" id="hotel-amenities" placeholder="e.g. WiFi, Pool, Spa, Gym, Parking" />
+          </div>
+          <div class="hotel-form-actions">
+            <button type="submit" class="btn btn-primary" id="hotel-form-submit">Add Hotel</button>
+            <button type="button" class="btn btn-outline" id="hotel-form-cancel" style="display:none;">Cancel edit</button>
+          </div>
+        </form>
+
+        <h3 style="margin-top: 32px;">Existing Hotels</h3>
+        <div class="list-container" id="hotels-list"></div>
+      </div>
+
+      <!-- Users Panel -->
+      <div class="panel" id="panel-users">
+        <h2>Registered Users</h2>
+        <div class="list-container" id="users-list"></div>
+      </div>
+
+      <!-- Bookings Panel -->
+      <div class="panel" id="panel-bookings">
+        <h2>All Bookings</h2>
+        <div class="list-container" id="bookings-list"></div>
+      </div>
+
+      <!-- Seed Data Panel -->
+      <div class="panel" id="panel-seed">
+        <h2>Seed Sample Data</h2>
+        <p style="margin-bottom:16px;color:#666;">Click below to populate the database with sample hotels, rooms, and bookings for testing.</p>
+        <button class="btn btn-success" id="seed-btn">Seed Sample Data</button>
+        <button class="btn btn-danger" id="reset-btn" style="margin-left:8px;">Reset All Data</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const BASE_URL = window.location.origin + '/api/v1';
+    let authToken = localStorage.getItem('admin_token') || '';
+
+    function showToast(message, type = 'success') {
+      const toast = document.createElement('div');
+      toast.className = `toast toast-${type}`;
+      toast.textContent = message;
+      document.body.appendChild(toast);
+      setTimeout(() => toast.remove(), 3000);
+    }
+
+    async function apiCall(url, method = 'GET', body = null) {
+      const opts = {
+        method,
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authToken}` },
+        credentials: 'include',
+      };
+      if (body) opts.body = JSON.stringify(body);
+      const res = await fetch(BASE_URL + url, opts);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error?.message || 'Request failed');
+      return data;
+    }
+
+    // Login
+    document.getElementById('login-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      try {
+        const res = await apiCall('/auth/login', 'POST', {
+          email: document.getElementById('login-email').value,
+          password: document.getElementById('login-password').value,
+        });
+        authToken = res.data.accessToken;
+        localStorage.setItem('admin_token', authToken);
+        document.getElementById('login-section').style.display = 'none';
+        document.getElementById('app-content').style.display = 'block';
+        loadAll();
+        showToast('Logged in successfully');
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    });
+
+    // Auto-login if token exists
+    if (authToken) {
+      apiCall('/users/profile').then(() => {
+        document.getElementById('login-section').style.display = 'none';
+        document.getElementById('app-content').style.display = 'block';
+        loadAll();
+      }).catch(() => {
+        localStorage.removeItem('admin_token');
+        authToken = '';
+      });
+    }
+
+    // Tabs
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+        tab.classList.add('active');
+        document.getElementById(`panel-${tab.dataset.tab}`).classList.add('active');
+      });
+    });
+
+    function escHtml(s) {
+      return String(s ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    function resetAllNestedRoomForms() {
+      document.querySelectorAll('.nested-room-form').forEach((form) => {
+        form.reset();
+        const hid = form.querySelector('.nested-room-edit-id');
+        if (hid) hid.value = '';
+        const sub = form.querySelector('.nested-room-submit');
+        if (sub) sub.textContent = 'Add room';
+        const cancel = form.querySelector('.nested-room-cancel');
+        if (cancel) cancel.style.display = 'none';
+      });
+    }
+
+    // Load all data
+    async function loadAll() {
+      await Promise.all([loadHotels(), loadUsers(), loadBookings(), loadSummary()]);
+    }
+
+    async function loadSummary() {
+      try {
+        const hotels = await apiCall('/admin/hotels');
+        const hotelCount = hotels.length;
+        let roomCount = 0;
+        for (const h of hotels) {
+          const rooms = await apiCall(`/admin/hotels/${h.id}/rooms`);
+          roomCount += rooms.length;
+        }
+        document.getElementById('data-summary').innerHTML = `
+          <div class="summary-card"><div class="count">${hotelCount}</div><div class="label">Hotels</div></div>
+          <div class="summary-card"><div class="count">${roomCount}</div><div class="label">Rooms</div></div>
+        `;
+      } catch {}
+    }
+
+    async function loadHotels() {
+      try {
+        const hotels = await apiCall('/admin/hotels');
+        const list = document.getElementById('hotels-list');
+        if (hotels.length === 0) {
+          list.innerHTML = '<div class="empty-state">No hotels yet. Add one above.</div>';
+          return;
+        }
+
+        const hotelsWithRooms = await Promise.all(
+          hotels.map(async (h) => ({
+            ...h,
+            rooms: await apiCall(`/admin/hotels/${h.id}/rooms`),
+          }))
+        );
+
+        list.innerHTML = hotelsWithRooms.map((h) => {
+          const roomsHtml = (h.rooms || []).length === 0
+            ? '<div class="card-meta" style="padding:8px 0">No rooms yet. Add one below.</div>'
+            : h.rooms.map((r) => `
+              <div class="room-row" data-room-row="${h.id}-${r.id}">
+                <div>
+                  <strong>${escHtml(r.type)}</strong>
+                  <div class="card-meta">₹${r.basePrice || r.price}/night · Capacity ${r.capacity} · Count ${r.totalCount}</div>
+                  <div class="card-meta">${escHtml((r.amenities || []).join(', '))}</div>
+                </div>
+                <div class="card-actions">
+                  <button type="button" class="btn btn-outline btn-sm" data-action="edit-room" data-hotel-id="${h.id}" data-room-id="${r.id}">Edit</button>
+                  <button type="button" class="btn btn-danger btn-sm" data-action="delete-room" data-hotel-id="${h.id}" data-room-id="${r.id}">Delete</button>
+                </div>
+              </div>
+            `).join('');
+
+          return `
+          <div class="card" data-hotel-card="${h.id}">
+            <div class="card-header">
+              <span class="card-title">${escHtml(h.name)}</span>
+              <div style="display:flex;align-items:center;gap:10px">
+                <span class="badge ${h.active !== false ? 'badge-active' : 'badge-inactive'}">${h.active !== false ? 'Active' : 'Inactive'}</span>
+                <div class="card-actions">
+                  <button type="button" class="btn btn-outline btn-sm" data-action="edit-hotel" data-hotel-id="${h.id}">Edit</button>
+                  <button type="button" class="btn btn-danger btn-sm" data-action="delete-hotel" data-hotel-id="${h.id}">Delete</button>
+                </div>
+              </div>
+            </div>
+            <div class="card-meta">${escHtml(h.city)} | ${escHtml(h.contactInfo?.address || '')} | ${escHtml((h.amenities || []).join(', '))}</div>
+            <div class="card-meta" style="margin-top:4px">ID: ${h.id} | Photos: ${h.photos?.length || 0}</div>
+
+            <div class="nested-rooms">
+              <h4>Rooms at this hotel</h4>
+              <form class="nested-room-form" data-hotel-id="${h.id}">
+                <input type="hidden" class="nested-room-edit-id" value="" />
+                <div class="form-row">
+                  <div class="form-group">
+                    <label>Room type</label>
+                    <input type="text" class="nr-type" required placeholder="e.g. Deluxe Suite" />
+                  </div>
+                  <div class="form-group">
+                    <label>Base price / night (₹)</label>
+                    <input type="number" class="nr-price" required placeholder="2500" />
+                  </div>
+                </div>
+                <div class="form-row">
+                  <div class="form-group">
+                    <label>Total count</label>
+                    <input type="number" class="nr-count" required placeholder="10" />
+                  </div>
+                  <div class="form-group">
+                    <label>Capacity (guests)</label>
+                    <input type="number" class="nr-capacity" required placeholder="2" />
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label>Photos (one URL per line)</label>
+                  <textarea class="nr-photos" placeholder="https://..."></textarea>
+                </div>
+                <div class="form-group">
+                  <label>Amenities (comma separated)</label>
+                  <input type="text" class="nr-amenities" placeholder="WiFi, AC, TV" />
+                </div>
+                <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+                  <button type="submit" class="btn btn-primary btn-sm nested-room-submit">Add room</button>
+                  <button type="button" class="btn btn-outline btn-sm nested-room-cancel" style="display:none">Cancel</button>
+                </div>
+              </form>
+              <div class="rooms-list-block">${roomsHtml}</div>
+            </div>
+          </div>`;
+        }).join('');
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    }
+
+    async function loadUsers() {
+      try {
+        const profile = await apiCall('/users/profile');
+        const list = document.getElementById('users-list');
+        list.innerHTML = `
+          <div class="card">
+            <div class="card-header">
+              <span class="card-title">${profile.name}</span>
+              <span class="badge badge-active">${profile.roles?.join(', ')}</span>
+            </div>
+            <div class="card-meta">${profile.email}</div>
+          </div>
+          <div class="info-box">Only showing current logged-in user. Other users visible via DB file.</div>
+        `;
+      } catch {}
+    }
+
+    async function loadBookings() {
+      try {
+        const hotels = await apiCall('/admin/hotels');
+        let allBookings = [];
+        for (const h of hotels) {
+          const bookings = await apiCall(`/admin/hotels/${h.id}/bookings`);
+          allBookings.push(...bookings.map(b => ({ ...b, hotelName: h.name })));
+        }
+        const list = document.getElementById('bookings-list');
+        if (allBookings.length === 0) {
+          list.innerHTML = '<div class="empty-state">No bookings yet.</div>';
+          return;
+        }
+        list.innerHTML = allBookings.map(b => `
+          <div class="card">
+            <div class="card-header">
+              <span class="card-title">Booking #${b.id} - ${b.hotelName}</span>
+              <span class="badge ${b.bookingStatus === 'CONFIRMED' ? 'badge-active' : 'badge-inactive'}">${b.bookingStatus}</span>
+            </div>
+            <div class="card-meta">Room: ${b.roomType} | Check-in: ${b.checkInDate} | Check-out: ${b.checkOutDate} | Amount: ₹${b.amount}</div>
+          </div>
+        `).join('');
+      } catch {}
+    }
+
+    function clearHotelEditMode() {
+      document.getElementById('hotel-form-id').value = '';
+      document.getElementById('hotel-form-heading').textContent = 'Add New Hotel';
+      document.getElementById('hotel-form-submit').textContent = 'Add Hotel';
+      document.getElementById('hotel-form-cancel').style.display = 'none';
+    }
+
+    document.getElementById('hotel-form-cancel').addEventListener('click', () => {
+      document.getElementById('hotel-form').reset();
+      clearHotelEditMode();
+    });
+
+    // Add / Update Hotel
+    document.getElementById('hotel-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      try {
+        const photos = document.getElementById('hotel-photos').value.split('\n').filter(x => x.trim());
+        const amenities = document.getElementById('hotel-amenities').value.split(',').map(x => x.trim()).filter(Boolean);
+        const payload = {
+          name: document.getElementById('hotel-name').value,
+          city: document.getElementById('hotel-city').value,
+          photos,
+          amenities,
+          contactInfo: {
+            address: document.getElementById('hotel-address').value,
+            email: document.getElementById('hotel-email').value,
+            phoneNumber: document.getElementById('hotel-phone').value,
+            location: document.getElementById('hotel-location').value,
+          },
+        };
+        const editId = document.getElementById('hotel-form-id').value;
+        if (editId) {
+          await apiCall(`/admin/hotels/${editId}`, 'PUT', payload);
+          showToast('Hotel updated successfully');
+        } else {
+          await apiCall('/admin/hotels', 'POST', payload);
+          showToast('Hotel added successfully');
+        }
+        document.getElementById('hotel-form').reset();
+        clearHotelEditMode();
+        loadAll();
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    });
+
+    document.getElementById('hotels-list').addEventListener('click', async (e) => {
+      const btn = e.target.closest('[data-action]');
+      if (!btn) return;
+      const action = btn.getAttribute('data-action');
+      const hotelId = btn.getAttribute('data-hotel-id');
+
+      try {
+        if (action === 'delete-hotel') {
+          if (!confirm('Delete this hotel, all its rooms, and bookings for this hotel?')) return;
+          await apiCall(`/admin/hotels/${hotelId}`, 'DELETE');
+          showToast('Hotel deleted');
+          if (document.getElementById('hotel-form-id').value === String(hotelId)) {
+            document.getElementById('hotel-form').reset();
+            clearHotelEditMode();
+          }
+          loadAll();
+          return;
+        }
+
+        if (action === 'edit-hotel') {
+          const h = await apiCall(`/admin/hotels/${hotelId}`);
+          document.getElementById('hotel-form-id').value = h.id;
+          document.getElementById('hotel-name').value = h.name || '';
+          document.getElementById('hotel-city').value = h.city || '';
+          document.getElementById('hotel-address').value = h.contactInfo?.address || '';
+          document.getElementById('hotel-email').value = h.contactInfo?.email || '';
+          document.getElementById('hotel-phone').value = h.contactInfo?.phoneNumber || '';
+          document.getElementById('hotel-location').value = h.contactInfo?.location || '';
+          document.getElementById('hotel-photos').value = (h.photos || []).join('\n');
+          document.getElementById('hotel-amenities').value = (h.amenities || []).join(', ');
+          document.getElementById('hotel-form-heading').textContent = 'Edit Hotel';
+          document.getElementById('hotel-form-submit').textContent = 'Save changes';
+          document.getElementById('hotel-form-cancel').style.display = 'inline-block';
+          document.getElementById('hotel-form').scrollIntoView({ behavior: 'smooth', block: 'start' });
+          return;
+        }
+
+        if (action === 'delete-room') {
+          const roomId = btn.getAttribute('data-room-id');
+          if (!confirm('Delete this room?')) return;
+          await apiCall(`/admin/hotels/${hotelId}/rooms/${roomId}`, 'DELETE');
+          showToast('Room deleted');
+          loadAll();
+          return;
+        }
+
+        if (action === 'edit-room') {
+          const roomId = btn.getAttribute('data-room-id');
+          const room = await apiCall(`/admin/hotels/${hotelId}/rooms/${roomId}`);
+          resetAllNestedRoomForms();
+          const card = btn.closest('[data-hotel-card]');
+          const form = card.querySelector('.nested-room-form');
+          form.querySelector('.nested-room-edit-id').value = String(room.id);
+          form.querySelector('.nr-type').value = room.type || '';
+          form.querySelector('.nr-price').value = room.basePrice ?? room.price ?? '';
+          form.querySelector('.nr-count').value = room.totalCount ?? '';
+          form.querySelector('.nr-capacity').value = room.capacity ?? '';
+          form.querySelector('.nr-photos').value = (room.photos || []).join('\n');
+          form.querySelector('.nr-amenities').value = (room.amenities || []).join(', ');
+          form.querySelector('.nested-room-submit').textContent = 'Update room';
+          form.querySelector('.nested-room-cancel').style.display = 'inline-block';
+          form.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    });
+
+    document.getElementById('hotels-list').addEventListener('submit', async (e) => {
+      const form = e.target.closest('.nested-room-form');
+      if (!form || !document.getElementById('hotels-list').contains(form)) return;
+      e.preventDefault();
+      const hotelId = form.getAttribute('data-hotel-id');
+      const editRoomId = form.querySelector('.nested-room-edit-id').value;
+      try {
+        const photos = form.querySelector('.nr-photos').value.split('\n').filter((x) => x.trim());
+        const amenities = form.querySelector('.nr-amenities').value.split(',').map((x) => x.trim()).filter(Boolean);
+        const body = {
+          type: form.querySelector('.nr-type').value,
+          basePrice: Number(form.querySelector('.nr-price').value),
+          totalCount: Number(form.querySelector('.nr-count').value),
+          capacity: Number(form.querySelector('.nr-capacity').value),
+          photos,
+          amenities,
+        };
+        if (editRoomId) {
+          await apiCall(`/admin/hotels/${hotelId}/rooms/${editRoomId}`, 'PUT', body);
+          showToast('Room updated');
+        } else {
+          await apiCall(`/admin/hotels/${hotelId}/rooms`, 'POST', body);
+          showToast('Room added');
+        }
+        form.reset();
+        form.querySelector('.nested-room-edit-id').value = '';
+        form.querySelector('.nested-room-submit').textContent = 'Add room';
+        form.querySelector('.nested-room-cancel').style.display = 'none';
+        loadAll();
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    });
+
+    document.getElementById('hotels-list').addEventListener('click', (e) => {
+      const cancel = e.target.closest('.nested-room-cancel');
+      if (!cancel) return;
+      const form = cancel.closest('.nested-room-form');
+      if (!form) return;
+      form.reset();
+      form.querySelector('.nested-room-edit-id').value = '';
+      form.querySelector('.nested-room-submit').textContent = 'Add room';
+      cancel.style.display = 'none';
+    });
+
+    // Seed Data
+    document.getElementById('seed-btn').addEventListener('click', async () => {
+      try {
+        // Create sample hotels
+        const hotel1 = await apiCall('/admin/hotels', 'POST', {
+          name: 'Hotel Almond Resorts and Spa',
+          city: 'Delhi',
+          photos: [
+            'https://cf.bstatic.com/xdata/images/hotel/max1024x768/656022653.jpg?k=ec44f82162e7354b457c97f6786102a32f739d97d4973ad30ad7565c55f02848&o=',
+            'https://cf.bstatic.com/xdata/images/hotel/max1024x768/625615935.jpg?k=376e2a6ba250aec1226b659f0b90a846d4bc6f0ba4f017e679fd782981c5dbcb&o=',
+            'https://cf.bstatic.com/xdata/images/hotel/max1024x768/656022668.jpg?k=1e63e54f0e3a1d6b0e2c76de4e1d9a9e0e6b2e4c6a8b2c4d6e8f0a2b4c6d8e0&o=',
+            'https://cf.bstatic.com/xdata/images/hotel/max1024x768/656022670.jpg?k=2e63e54f0e3a1d6b0e2c76de4e1d9a9e0e6b2e4c6a8b2c4d6e8f0a2b4c6d8e1&o=',
+            'https://cf.bstatic.com/xdata/images/hotel/max1024x768/656022672.jpg?k=3e63e54f0e3a1d6b0e2c76de4e1d9a9e0e6b2e4c6a8b2c4d6e8f0a2b4c6d8e2&o=',
+          ],
+          amenities: ['AC', 'Lake View', 'Pool Area', 'Outdoor', 'Facade', 'Spa'],
+          contactInfo: { address: 'East Delhi, Near Metro Station', phoneNumber: '9829391929', email: 'hello@almondresorts.com', location: '77.2090,28.6139' },
+        });
+
+        const hotel2 = await apiCall('/admin/hotels', 'POST', {
+          name: 'OYO Townhouse Royal Suite',
+          city: 'Mumbai',
+          photos: [
+            'https://cf.bstatic.com/xdata/images/hotel/max1024x768/625615935.jpg?k=376e2a6ba250aec1226b659f0b90a846d4bc6f0ba4f017e679fd782981c5dbcb&o=',
+            'https://cf.bstatic.com/xdata/images/hotel/max1024x768/656022653.jpg?k=ec44f82162e7354b457c97f6786102a32f739d97d4973ad30ad7565c55f02848&o=',
+            'https://cf.bstatic.com/xdata/images/hotel/max1024x768/656022668.jpg?k=1e63e54f0e3a1d6b0e2c76de4e1d9a9e0e6b2e4c6a8b2c4d6e8f0a2b4c6d8e0&o=',
+            'https://cf.bstatic.com/xdata/images/hotel/max1024x768/656022670.jpg?k=2e63e54f0e3a1d6b0e2c76de4e1d9a9e0e6b2e4c6a8b2c4d6e8f0a2b4c6d8e1&o=',
+          ],
+          amenities: ['WiFi', 'Gym', 'Restaurant', 'Parking', 'Room Service'],
+          contactInfo: { address: 'Andheri West, Mumbai', phoneNumber: '9876543210', email: 'info@oyotownhouse.com', location: '72.8777,19.0760' },
+        });
+
+        const hotel3 = await apiCall('/admin/hotels', 'POST', {
+          name: 'Taj Lakeside Resort',
+          city: 'Bangalore',
+          photos: [
+            'https://cf.bstatic.com/xdata/images/hotel/max1024x768/656022668.jpg?k=1e63e54f0e3a1d6b0e2c76de4e1d9a9e0e6b2e4c6a8b2c4d6e8f0a2b4c6d8e0&o=',
+            'https://cf.bstatic.com/xdata/images/hotel/max1024x768/656022653.jpg?k=ec44f82162e7354b457c97f6786102a32f739d97d4973ad30ad7565c55f02848&o=',
+            'https://cf.bstatic.com/xdata/images/hotel/max1024x768/625615935.jpg?k=376e2a6ba250aec1226b659f0b90a846d4bc6f0ba4f017e679fd782981c5dbcb&o=',
+            'https://cf.bstatic.com/xdata/images/hotel/max1024x768/656022670.jpg?k=2e63e54f0e3a1d6b0e2c76de4e1d9a9e0e6b2e4c6a8b2c4d6e8f0a2b4c6d8e1&o=',
+            'https://cf.bstatic.com/xdata/images/hotel/max1024x768/656022672.jpg?k=3e63e54f0e3a1d6b0e2c76de4e1d9a9e0e6b2e4c6a8b2c4d6e8f0a2b4c6d8e2&o=',
+          ],
+          amenities: ['Pool', 'Spa', 'Lake View', 'Fine Dining', 'Bar', 'Concierge'],
+          contactInfo: { address: 'Whitefield, Bangalore', phoneNumber: '9988776655', email: 'reservations@tajlakeside.com', location: '77.7506,12.9698' },
+        });
+
+        // Create rooms for hotel 1
+        const h1Id = hotel1.data.id;
+        await apiCall(`/admin/hotels/${h1Id}/rooms`, 'POST', {
+          type: 'Almond Deluxe Room',
+          basePrice: 1500,
+          totalCount: 10,
+          capacity: 2,
+          photos: ['https://cf.bstatic.com/xdata/images/hotel/max1024x768/656022653.jpg?k=ec44f82162e7354b457c97f6786102a32f739d97d4973ad30ad7565c55f02848&o=', 'https://cf.bstatic.com/xdata/images/hotel/max1024x768/625615935.jpg?k=376e2a6ba250aec1226b659f0b90a846d4bc6f0ba4f017e679fd782981c5dbcb&o='],
+          amenities: ['WiFi', 'Air Conditioning', 'TV', 'Minibar', 'Room Service'],
+        });
+        await apiCall(`/admin/hotels/${h1Id}/rooms`, 'POST', {
+          type: 'Almond Presidential Suite',
+          basePrice: 3500,
+          totalCount: 3,
+          capacity: 4,
+          photos: ['https://cf.bstatic.com/xdata/images/hotel/max1024x768/625615935.jpg?k=376e2a6ba250aec1226b659f0b90a846d4bc6f0ba4f017e679fd782981c5dbcb&o=', 'https://cf.bstatic.com/xdata/images/hotel/max1024x768/656022653.jpg?k=ec44f82162e7354b457c97f6786102a32f739d97d4973ad30ad7565c55f02848&o='],
+          amenities: ['WiFi', 'Air Conditioning', 'Spa', 'Fireplace', 'King-size Bed', 'Dining', 'Minibar', 'Gym Access'],
+        });
+
+        // Rooms for hotel 2
+        const h2Id = hotel2.data.id;
+        await apiCall(`/admin/hotels/${h2Id}/rooms`, 'POST', {
+          type: 'Standard Room',
+          basePrice: 999,
+          totalCount: 20,
+          capacity: 2,
+          photos: ['https://cf.bstatic.com/xdata/images/hotel/max1024x768/656022668.jpg?k=1e63e54f0e3a1d6b0e2c76de4e1d9a9e0e6b2e4c6a8b2c4d6e8f0a2b4c6d8e0&o='],
+          amenities: ['WiFi', 'AC', 'TV', 'Geyser'],
+        });
+        await apiCall(`/admin/hotels/${h2Id}/rooms`, 'POST', {
+          type: 'Premium Room',
+          basePrice: 1800,
+          totalCount: 8,
+          capacity: 3,
+          photos: ['https://cf.bstatic.com/xdata/images/hotel/max1024x768/656022670.jpg?k=2e63e54f0e3a1d6b0e2c76de4e1d9a9e0e6b2e4c6a8b2c4d6e8f0a2b4c6d8e1&o='],
+          amenities: ['WiFi', 'AC', 'TV', 'Minibar', 'Room Service', 'Balcony'],
+        });
+
+        // Rooms for hotel 3
+        const h3Id = hotel3.data.id;
+        await apiCall(`/admin/hotels/${h3Id}/rooms`, 'POST', {
+          type: 'Lakeside Villa',
+          basePrice: 5000,
+          totalCount: 5,
+          capacity: 4,
+          photos: ['https://cf.bstatic.com/xdata/images/hotel/max1024x768/656022672.jpg?k=3e63e54f0e3a1d6b0e2c76de4e1d9a9e0e6b2e4c6a8b2c4d6e8f0a2b4c6d8e2&o='],
+          amenities: ['WiFi', 'AC', 'Private Pool', 'Lake View', 'Butler Service', 'Jacuzzi'],
+        });
+        await apiCall(`/admin/hotels/${h3Id}/rooms`, 'POST', {
+          type: 'Garden Room',
+          basePrice: 2500,
+          totalCount: 12,
+          capacity: 2,
+          photos: ['https://cf.bstatic.com/xdata/images/hotel/max1024x768/656022653.jpg?k=ec44f82162e7354b457c97f6786102a32f739d97d4973ad30ad7565c55f02848&o='],
+          amenities: ['WiFi', 'AC', 'Garden View', 'Tea/Coffee Maker', 'Room Service'],
+        });
+
+        showToast('Sample data seeded successfully!');
+        loadAll();
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    });
+
+    // Reset Data
+    document.getElementById('reset-btn').addEventListener('click', async () => {
+      if (!confirm('Are you sure? This will delete ALL data.')) return;
+      try {
+        const res = await fetch(BASE_URL + '/admin/reset', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authToken}` },
+          credentials: 'include',
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.error?.message || 'Reset failed');
+        showToast('Data reset successfully');
+        loadAll();
+      } catch (err) {
+        showToast(err.message || 'Reset failed', 'error');
+      }
+    });
+  </script>
+</body>
+</html>
