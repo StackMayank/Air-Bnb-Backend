@@ -10,9 +10,10 @@ const hotelRoutes = require('./routes/hotels');
 const bookingRoutes = require('./routes/bookings');
 const adminRoutes = require('./routes/admin');
 const uploadRoutes = require('./routes/upload');
+require('dotenv').config();
 
 const app = express();
-const PORT = 8080;
+const PORT = process.env.PORT || 8080;
 
 // Ensure uploads directory exists
 const uploadsDir = path.join(__dirname, '..', 'public', 'uploads');
