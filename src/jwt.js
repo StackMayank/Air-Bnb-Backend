@@ -1,7 +1,7 @@
 const jwt = require('jsonwebtoken');
 
-const JWT_SECRET = 'hotel-management-secret-key-2024';
-const JWT_REFRESH_SECRET = 'hotel-management-refresh-secret-2024';
+const JWT_SECRET = process.env.JWT_SECRET || 'hotel-management-secret-key-2024';
+const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || 'hotel-management-refresh-secret-2024';
 
 function generateAccessToken(user) {
   return jwt.sign(

@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
@@ -10,10 +11,11 @@ const hotelRoutes = require('./routes/hotels');
 const bookingRoutes = require('./routes/bookings');
 const adminRoutes = require('./routes/admin');
 const uploadRoutes = require('./routes/upload');
-require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 8080;
+
+app.set('trust proxy', 1);
 
 // Ensure uploads directory exists
 const uploadsDir = path.join(__dirname, '..', 'public', 'uploads');
