@@ -27,7 +27,8 @@ app.use(cors({
   origin: [
     'http://localhost:5173',
     'http://localhost:3000',
-    'https://staybookers.vercel.app'
+    'https://staybookers.vercel.app',
+    'https://hotel-booking-app-six-dun.vercel.app'
   ],
   credentials: true,
 }));
